@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Floricultura Cozy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="jogo">
+  <header class="topo">
+    <h1>Floricultura Cozy</h1>
+    <div class="moedas" aria-label="Moedas"><img id="icone-moeda" alt=""><span id="moedas">0</span></div>
+  </header>
+
+  <div class="moldura">
+    <canvas id="jardim" aria-label="Jardim com canteiros de flores"></canvas>
+  </div>
+
+  <p id="info" class="info" aria-live="polite"></p>
+  <div id="ferramentas" class="ferramentas" role="toolbar" aria-label="Sementes e ferramentas"></div>
+  <p id="status" class="status" aria-live="polite"></p>
+
+  <footer class="rodape">
+    <span>Plante, regue, colha e venda. O jardim continua crescendo por até 1 hora com o jogo fechado.</span>
+    <button type="button" id="recomecar" class="recomecar">Recomeçar</button>
+  </footer>
+</main>
+<script src="src/sprites.js"></script>
+<script src="src/game.js"></script>
+</body>
+</html>
