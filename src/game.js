@@ -1,10 +1,11 @@
 (() => {
   // ---------- Configuração ----------
   const ESCALA = 4;          // cada pixel do jogo vira 4 pixels na tela
-  const TILE = 16;
-  const LARG = 160;
-  const ALT = 112;
-  const GRADE = { x: 32, y: 24, cols: 6, linhas: 4 };
+  const TILE = 24;
+  const LARG = 192;
+  const ALT = 144;
+  const GRADE = { x: 24, y: 26, cols: 6, linhas: 4 };
+  const CAMINHO_Y = 126;     // onde começa o caminho de terra embaixo
   const CHAVE_SAVE = 'floricultura-cozy-v1';
   const MAX_OFFLINE = 3600;  // segundos de crescimento enquanto o jogo está fechado
 
@@ -36,21 +37,18 @@
   const CONTORNO = '#2e2a24';
   const cacheSprites = new Map();
 
-  // Desenha um sprite de texto num canvas pequeno, com contorno automático.
-  // base: alinha a planta pela parte de baixo do tile. balanco: desloca as linhas de cima.
-  function sprite(nome, linhas, { base = false, balanco = 0 } = {}) {
+  // Desenha um sprite de texto num canvas pequeno, com 1 pixel de margem para o contorno automático.
+  // balanco: desloca para os lados a parte de cima do sprite (a fração de linhas em fracaoBalanco).
+  function sprite(nome, linhas, { balanco = 0, fracaoBalanco = 0.55 } = {}) {
     const chave = nome + '|' + balanco;
     if (cacheSprites.has(chave)) return cacheSprites.get(chave);
 
     const larg = Math.max(...linhas.map((l) => l.length));
-    const alt = base ? TILE : linhas.length;
-    const topo = base ? Math.max(0, 14 - linhas.length) : 0;
-    const limiteBalanco = topo + Math.ceil(linhas.length * 0.55);
-    const W = larg + 2, H = alt + 2;
+    const limiteBalanco = Math.ceil(linhas.length * fracaoBalanco);
+    const W = larg + 2, H = linhas.length + 2;
     const grade = Array.from({ length: H }, () => Array(W).fill(null));
 
-    linhas.forEach((linha, i) => {
-      const y = topo + i;
+    linhas.forEach((linha, y) => {
       const dx = y < limiteBalanco ? balanco : 0;
       [...linha].forEach((ch, x) => {
         const cor = PALETA[ch];
@@ -78,11 +76,22 @@
     return c;
   }
 
+  // Quanto da planta balança: a costela pronta só mexe as folhas de trás, para não rasgar a folha da frente.
+  const FRACAO_BALANCO = { costelapronta: 0.3 };
+
   function spriteDaPlanta(p, balanco) {
-    if (p.estagio === 0) return sprite('semente', SPRITES.semente, { base: true, balanco: 0 });
-    if (p.estagio === 1) return sprite('broto', SPRITES.broto, { base: true, balanco });
+    if (p.estagio === 0) return sprite('semente', SPRITES.semente);
+    if (p.estagio === 1) return sprite('broto', SPRITES.broto, { balanco });
     const fase = p.estagio === 3 ? 'pronta' : 'crescendo';
-    return sprite(p.tipo + fase, SPRITES[p.tipo][fase], { base: true, balanco });
+    const nome = p.tipo + fase;
+    return sprite(nome, SPRITES[p.tipo][fase], { balanco, fracaoBalanco: FRACAO_BALANCO[nome] });
+  }
+
+  // Centraliza o sprite no canteiro, com a base 3 pixels acima da borda de baixo.
+  function desenharPlanta(p, balanco, x, y) {
+    const c = spriteDaPlanta(p, balanco);
+    const larg = c.width - 2, alt = c.height - 2;
+    ctx.drawImage(c, x + Math.floor((TILE - larg) / 2) - 1, y + TILE - 3 - alt);
   }
 
   // ---------- Estado ----------
@@ -156,7 +165,7 @@
   // ---------- Ações ----------
   function centro(i) {
     const col = i % GRADE.cols, lin = Math.floor(i / GRADE.cols);
-    return { x: GRADE.x + col * TILE + 8, y: GRADE.y + lin * TILE + 8 };
+    return { x: GRADE.x + col * TILE + TILE / 2, y: GRADE.y + lin * TILE + TILE / 2 };
   }
 
   function texto(i, msg, cor = '#fff6d8') {
@@ -287,7 +296,7 @@
     g.fillStyle = '#a8703f';
     g.fillRect(0, 9, LARG, 2);
     g.fillRect(0, 14, LARG, 2);
-    for (let x = 2; x < LARG; x += 10) {
+    for (let x = 1; x < LARG; x += 10) {
       g.fillStyle = '#7a4a2e';
       g.fillRect(x, 5, 4, 13);
       g.fillStyle = '#c48a52';
@@ -295,14 +304,15 @@
     }
     // caminho de terra
     g.fillStyle = '#d9b77f';
-    g.fillRect(0, 96, LARG, 16);
+    g.fillRect(0, CAMINHO_Y, LARG, ALT - CAMINHO_Y);
     g.fillStyle = '#c9a36a';
-    for (let k = 0; k < 40; k++) g.fillRect(Math.floor(rnd() * LARG), 97 + Math.floor(rnd() * 14), 2, 1);
+    for (let k = 0; k < 50; k++) g.fillRect(Math.floor(rnd() * LARG), CAMINHO_Y + 1 + Math.floor(rnd() * (ALT - CAMINHO_Y - 2)), 2, 1);
     // florzinhas decorativas no gramado
     const cores = ['#f6d861', '#fff6d8', '#f7a1b5', '#c9a7f2'];
     for (let k = 0; k < 18; k++) {
-      let x = Math.floor(rnd() * LARG), y = 20 + Math.floor(rnd() * 74);
-      if (x > GRADE.x - 3 && x < GRADE.x + GRADE.cols * TILE + 2) x = rnd() < 0.5 ? 4 + Math.floor(rnd() * 22) : 132 + Math.floor(rnd() * 24);
+      let x = Math.floor(rnd() * LARG), y = 20 + Math.floor(rnd() * (CAMINHO_Y - 26));
+      const fimGrade = GRADE.x + GRADE.cols * TILE;
+      if (x > GRADE.x - 3 && x < fimGrade + 2) x = rnd() < 0.5 ? 3 + Math.floor(rnd() * (GRADE.x - 6)) : fimGrade + 3 + Math.floor(rnd() * (LARG - fimGrade - 6));
       g.fillStyle = cores[k % cores.length];
       g.fillRect(x, y, 1, 1);
       g.fillRect(x - 1, y + 1, 1, 1);
@@ -316,15 +326,14 @@
 
   function desenharTerra(x, y, molhada) {
     ctx.fillStyle = molhada ? '#5a3a26' : '#8a5a38';
-    ctx.fillRect(x + 1, y + 1, 14, 14);
+    ctx.fillRect(x + 1, y + 1, TILE - 2, TILE - 2);
     ctx.fillStyle = molhada ? '#4a2f1f' : '#6f4529';
-    ctx.fillRect(x + 1, y + 14, 14, 1);
-    ctx.fillRect(x + 1, y + 5, 14, 1);
-    ctx.fillRect(x + 1, y + 10, 14, 1);
+    for (const ly of [6, 12, 18, TILE - 2]) ctx.fillRect(x + 1, y + ly, TILE - 2, 1);
     ctx.fillStyle = molhada ? '#6e4a32' : '#a8703f';
-    ctx.fillRect(x + 3, y + 3, 1, 1);
-    ctx.fillRect(x + 10, y + 7, 1, 1);
-    ctx.fillRect(x + 6, y + 12, 1, 1);
+    ctx.fillRect(x + 4, y + 3, 1, 1);
+    ctx.fillRect(x + 15, y + 9, 1, 1);
+    ctx.fillRect(x + 8, y + 15, 1, 1);
+    ctx.fillRect(x + 18, y + 20, 1, 1);
   }
 
   const borboleta = { x: 20, y: 40 };
@@ -340,12 +349,12 @@
 
       if (!c.liberado) {
         ctx.fillStyle = 'rgba(46, 42, 36, 0.12)';
-        ctx.fillRect(x + 1, y + 1, 14, 14);
-        ctx.drawImage(sprite('placa', SPRITES.placa), x, y + 2);
+        ctx.fillRect(x + 1, y + 1, TILE - 2, TILE - 2);
+        ctx.drawImage(sprite('placa', SPRITES.placa), x + 4, y + 6);
         ctx.fillStyle = '#fff6d8';
         ctx.font = '5px "Pixelify Sans", monospace';
         ctx.textAlign = 'center';
-        ctx.fillText(String(custoExpansao()), x + 7, y + 8);
+        ctx.fillText(String(custoExpansao()), x + 11, y + 12);
       } else {
         const molhada = p && estado.t < p.molhadoAte;
         desenharTerra(x, y, molhada);
@@ -353,40 +362,40 @@
 
       if (p) {
         const balanco = BALANCO[(quadro + col + lin * 2) % BALANCO.length];
-        ctx.drawImage(spriteDaPlanta(p, balanco), x - 1, y - 1);
+        desenharPlanta(p, balanco, x, y);
 
         const molhada = estado.t < p.molhadoAte;
         const encharcada = estado.t < p.encharcadoAte;
         if (p.estagio === 3) {
           if ((quadro + i) % 5 === 0) {
             ctx.fillStyle = '#fff6d8';
-            const sx = x + 3 + ((i * 7) % 10), sy = y + 1 + ((i * 3) % 4);
+            const sx = x + 5 + ((i * 7) % 14), sy = y + 1 + ((i * 3) % 6);
             ctx.fillRect(sx, sy - 1, 1, 3);
             ctx.fillRect(sx - 1, sy, 3, 1);
           }
         } else if (encharcada) {
           ctx.fillStyle = '#a9dcf5';
           const b = quadro % 2;
-          ctx.fillRect(x + 3, y + 12 - b, 1, 1);
-          ctx.fillRect(x + 11, y + 11 + b, 1, 1);
-          ctx.fillRect(x + 7, y + 13, 2, 1);
+          ctx.fillRect(x + 4, y + 18 - b, 1, 1);
+          ctx.fillRect(x + 18, y + 17 + b, 1, 1);
+          ctx.fillRect(x + 11, y + 20, 2, 1);
         } else if (!molhada) {
           const pulo = quadro % 2;
-          ctx.drawImage(sprite('gota', SPRITES.gota), x + 10, y - 4 - pulo);
+          ctx.drawImage(sprite('gota', SPRITES.gota), x + 16, y - 2 - pulo);
         }
       }
 
       if (i === hover) {
         ctx.strokeStyle = 'rgba(255, 246, 216, 0.9)';
         ctx.lineWidth = 1;
-        ctx.strokeRect(x + 0.5, y + 0.5, 15, 15);
+        ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
       }
     });
 
     // borboleta passeando
     const tb = agora / 1000;
-    borboleta.x = 80 + Math.sin(tb * 0.31) * 70;
-    borboleta.y = 50 + Math.sin(tb * 0.83) * 30 + Math.sin(tb * 2.1) * 4;
+    borboleta.x = LARG / 2 + Math.sin(tb * 0.31) * (LARG / 2 - 10);
+    borboleta.y = 60 + Math.sin(tb * 0.83) * 38 + Math.sin(tb * 2.1) * 4;
     const asa = Math.floor(agora / 160) % 2;
     ctx.drawImage(sprite('borboleta' + asa, SPRITES.borboleta[asa]), Math.round(borboleta.x), Math.round(borboleta.y));
 

@@ -80,7 +80,7 @@ canvas {
   width: 100%;
   max-width: 100%;
   height: auto;
-  aspect-ratio: 160 / 112;
+  aspect-ratio: 192 / 144;
   image-rendering: pixelated;
   cursor: pointer;
   touch-action: manipulation;

@@ -22,6 +22,7 @@ const PALETA = {
   S: '#8fa3b5', // metal
   c: '#5fa8d8', // água
   C: '#a9dcf5', // brilho da água
+  k: '#2e2a24', // contorno interno (separa folhas sobrepostas)
 };
 
 const SPRITES = {
@@ -90,30 +91,52 @@ const SPRITES = {
     ],
   },
 
+  // Costela de adão em 24x24, baseada nas fotos de referência:
+  // folha da frente em coração com nervura central clara e recortes, duas folhas escuras atrás.
   costela: {
     crescendo: [
-      '....GGG.........',
-      '...GlLGG........',
-      '...GlG.GG..GGG..',
-      '....GG.Gg.GlLG..',
-      '......g.gGlG.G..',
-      '.......g.GG.....',
-      '.......gg.......',
-      '.......g........',
+      '....gg..................',
+      '...gggggg...............',
+      '...ggggggg..............',
+      '...gglgggkk.............',
+      '..gggglgkGGG............',
+      '...ggggkGlllGGGGG.......',
+      '...ggGGkGllllllllG......',
+      '...gGGkGGl.lLllllG......',
+      '....gggkkGGGL.G.GG......',
+      '.......GGGGGLGGG.G......',
+      '........GGGGLGGGG.......',
+      '........Gk.GLGGGG.......',
+      '.........GGGLG.G........',
+      '.........GGGGGG.........',
+      '..........kGGG..........',
+      '..........g.k...........',
+      '...........gg...........',
+      '...........gg...........',
     ],
     pronta: [
-      '...GGG....GGGG..',
-      '..GlLG.G.GLlGGG.',
-      '.GlG.GG.GG.GlGG.',
-      '.GLG.GGgGG.GG.G.',
-      '..GG.G.g.G.G.G..',
-      '...G.Gg.g.gG....',
-      '.GGG..g.g.......',
-      'GlLGG..gg..GG...',
-      'GlG.GG.g..GlGG..',
-      '.GG.G..g.gG.GG..',
-      '..G.G..ggG.G....',
-      '.......g........',
+      '....gg............gg....',
+      'ggggggg.g......g.ggg.ggg',
+      'lgg.ggg.gg....gg.ggg.ggl',
+      'gl.gggg.Ggg..ggG.gggg.lg',
+      'g.glggg.kkg..gGk.ggggl.g',
+      'gggglgkkGGk..kkGkkglgg.g',
+      '.ggggkGGGGG..GGGGGkgggg.',
+      'gggggkGllllLLllllGGkgggg',
+      'gggg.GGlllllLllllGG.gggg',
+      '.g.GkGllllllLlllllGkG.g.',
+      '..ggkGGl..lLLl..lGGkggg.',
+      '...gkGk.GGGLLGGG.kGkg...',
+      '......GGG.GGLG.GGG......',
+      '......G..GG.LGG..GG.....',
+      '.......GGGGGLGGGG.......',
+      '......GG..GLLG..GG......',
+      '........GGGLLGGG........',
+      '........G.GGLG.G........',
+      '.........GG.LGG.........',
+      '..........GGGG..........',
+      '........................',
+      '........................',
     ],
   },
 
