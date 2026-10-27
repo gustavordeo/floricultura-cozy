@@ -23,13 +23,19 @@ const PALETA = {
   c: '#5fa8d8', // água
   C: '#a9dcf5', // brilho da água
   k: '#2e2a24', // contorno interno (separa folhas sobrepostas)
+  T: '#c8643c', // terracota
+  t: '#9c4a2c', // terracota escura
+  U: '#e08458', // borda da terracota
+  E: '#eef0ea', // cerâmica branca
+  e: '#c3cbc4', // sombra da cerâmica
+  Q: '#d9b25f', // palha
+  q: '#a8823c', // palha escura
+  F: '#e3a05a', // pelo do gato
+  f: '#b8743a', // pelo escuro
+  n: '#f6dcb4', // pelo claro
 };
 
 const SPRITES = {
-  semente: [
-    '.......l........',
-    '......bBb.......',
-  ],
   broto: [
     '.....lG.Gl......',
     '......GlG.......',
@@ -135,8 +141,6 @@ const SPRITES = {
       '........G.GGLG.G........',
       '.........GG.LGG.........',
       '..........GGGG..........',
-      '........................',
-      '........................',
     ],
   },
 
@@ -171,6 +175,14 @@ const SPRITES = {
     '.ooyyoo.',
     '..oooo..',
   ],
+  coracao: [
+    '.RR.RR.',
+    'RpRRRRR',
+    'RRRRRRR',
+    '.RRRRR.',
+    '..RRR..',
+    '...R...',
+  ],
   gota: [
     '..c..',
     '.cCc.',
@@ -178,17 +190,79 @@ const SPRITES = {
     'ccccc',
     '.ccc.',
   ],
-  placa: [
-    '..bbbbbbbbbb....',
-    '.bBBBBBBBBBBb...',
-    '.bBBBBBBBBBBb...',
-    '.bBBBBBBBBBBb...',
-    '..bbbbbbbbbb....',
-    '......bb........',
-    '......bb........',
+
+  vasos: {
+    barro: [
+      'tUUUUUUUUUUUt',
+      'tTTTTTTTTTTTt',
+      '.tTTTTTTTTTt.',
+      '.tTUTTTTTTTt.',
+      '..tUTTTTTTt..',
+      '..tTTTTTTTt..',
+      '...ttttttt...',
+    ],
+    ceramica: [
+      'eEEEEEEEEEEEe',
+      '.eEEEEEEEEEe.',
+      '.eccccccccce.',
+      '.eEEEEEEEEEe.',
+      '..eEEEEEEEe..',
+      '..eEEEEEEEe..',
+      '...eeeeeee...',
+    ],
+    cesto: [
+      'qQqQqQqQqQqQq',
+      'QqQqQqQqQqQqQ',
+      '.qQqQqQqQqQq.',
+      '.QqQqQqQqQqQ.',
+      '..qQqQqQqQq..',
+      '..QqQqQqQqQ..',
+      '...qqqqqqq...',
+    ],
+  },
+
+  // Gato dormindo no sofá: o segundo quadro tem uma linha a mais (respiração).
+  gato: [
+    [
+      '.........f.f..',
+      '..FFFFF..FFF..',
+      '.FnnFFFF.FkFk.',
+      'FnFFFFFFFFFFF.',
+      'fFFFFFFFFFFFf.',
+      '.ffff....fff..',
+    ],
+    [
+      '.........f.f..',
+      '..FFFFF..FFF..',
+      '.FnnFFFF.FkFk.',
+      'FnFFFFFFFFFFF.',
+      'FnFFFFFFFFFFF.',
+      'fFFFFFFFFFFFf.',
+      '.ffff....fff..',
+    ],
   ],
-  borboleta: [
-    ['p.p', 'RyR', 'p.p'],
-    ['...', 'pyp', '...'],
-  ],
+
+  luz: {
+    sol: [
+      '.y.y.',
+      '..y..',
+      'yyyyy',
+      '..y..',
+      '.y.y.',
+    ],
+    meia: [
+      '.yyy.',
+      'yyWWW',
+      'yyWWW',
+      'yyWWW',
+      '.yyy.',
+    ],
+    sombra: [
+      '.ww..',
+      'ww...',
+      'ww...',
+      'ww..w',
+      '.www.',
+    ],
+  },
 };

@@ -12,23 +12,33 @@
 <main class="jogo">
   <header class="topo">
     <h1>Floricultura Cozy</h1>
-    <div class="moedas" aria-label="Moedas"><img id="icone-moeda" alt=""><span id="moedas">0</span></div>
+    <div class="contadores">
+      <div class="contador" title="Aconchego: plantas crescidas e felizes com a luz, e vasos bonitos"><img id="icone-aconchego" alt=""><span class="visualmente-oculto">Aconchego</span><span id="aconchego">0</span></div>
+      <div class="contador" title="Moedas"><img id="icone-moeda" alt=""><span class="visualmente-oculto">Moedas</span><span id="moedas">0</span></div>
+    </div>
   </header>
 
   <div class="moldura">
-    <canvas id="jardim" aria-label="Jardim com canteiros de flores"></canvas>
+    <canvas id="sala" aria-label="Sala de estar com pontos para colocar vasos de plantas"></canvas>
   </div>
 
   <p id="info" class="info" aria-live="polite"></p>
-  <div id="ferramentas" class="ferramentas" role="toolbar" aria-label="Sementes e ferramentas"></div>
+
+  <div class="barra" role="toolbar" aria-label="Plantas, vasos e cuidados">
+    <section class="grupo"><h2>Plantas</h2><div id="grupo-plantas" class="botoes"></div></section>
+    <section class="grupo"><h2>Vasos</h2><div id="grupo-vasos" class="botoes"></div></section>
+    <section class="grupo"><h2>Cuidados</h2><div id="grupo-cuidados" class="botoes"></div></section>
+  </div>
+
   <p id="status" class="status" aria-live="polite"></p>
 
   <footer class="rodape">
-    <span>Plante, regue, colha e venda. O jardim continua crescendo por até 1 hora com o jogo fechado.</span>
+    <span>Cada canto da sala tem uma luz: sol direto perto da janela, meia-luz no meio e sombra perto da TV. As plantas continuam crescendo por até 1 hora com o jogo fechado.</span>
     <button type="button" id="recomecar" class="recomecar">Recomeçar</button>
   </footer>
 </main>
 <script src="src/sprites.js"></script>
+<script src="src/sala.js"></script>
 <script src="src/game.js"></script>
 </body>
 </html>

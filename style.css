@@ -1,4 +1,4 @@
-/* Jogo de uma tela só: moldura de madeira em volta do jardim, barra de ferramentas embaixo.
+/* Jogo de uma tela só: moldura de madeira em volta da sala, barra de ferramentas embaixo.
    Visual único (não muda com tema claro/escuro), com todas as cores definidas aqui. */
 :root {
   --fundo: #e4ecd2;
@@ -30,7 +30,7 @@ body {
 }
 
 .jogo {
-  max-width: 680px;
+  max-width: 860px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -53,7 +53,9 @@ h1 {
   text-wrap: balance;
 }
 
-.moedas {
+.contadores { display: flex; gap: 8px; }
+
+.contador {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -66,7 +68,7 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
-.moedas img { width: 24px; height: 24px; image-rendering: pixelated; }
+.contador img { width: 24px; height: 24px; image-rendering: pixelated; }
 
 .moldura {
   padding: 8px;
@@ -80,7 +82,7 @@ canvas {
   width: 100%;
   max-width: 100%;
   height: auto;
-  aspect-ratio: 192 / 144;
+  aspect-ratio: 256 / 160;
   image-rendering: pixelated;
   cursor: pointer;
   touch-action: manipulation;
@@ -92,10 +94,36 @@ canvas {
   color: var(--tinta-suave);
 }
 
-.ferramentas {
+.barra {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: 3fr 3fr 2fr;
+  gap: 12px;
+}
+
+.grupo { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+
+.grupo h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.botoes {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 8px;
+}
+
+.visualmente-oculto {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .ferramenta {
@@ -114,7 +142,7 @@ canvas {
   transition: transform 80ms;
 }
 
-.ferramenta img { width: 48px; height: 48px; image-rendering: pixelated; }
+.ferramenta img { width: 48px; height: 48px; object-fit: contain; image-rendering: pixelated; }
 .ferramenta .rotulo { font-weight: 600; font-size: 15px; text-align: center; }
 .ferramenta .detalhe { font-size: 12px; color: var(--tinta-suave); text-align: center; }
 
@@ -152,9 +180,13 @@ canvas {
   cursor: pointer;
 }
 
+@media (max-width: 720px) {
+  .barra { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 520px) {
-  .ferramentas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ferramenta img { width: 36px; height: 36px; }
+  .ferramenta .detalhe { font-size: 11px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
