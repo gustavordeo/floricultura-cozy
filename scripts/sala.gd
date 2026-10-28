@@ -1008,7 +1008,7 @@ func montar_interface() -> void:
 	var vasos := grupo(barra, "VASOS", 3)
 	for id in VASOS:
 		var def: Dictionary = VASOS[id]
-		var detalhe := "+%d aconchego" % def.charme if def.charme > 0 else "simples"
+		var detalhe: String = ("+%d aconchego" % def.charme) if def.charme > 0 else "simples"
 		botao(vasos, "vaso-" + id, def.nome, detalhe, Color(def.cor), "Usa este vaso nas próximas plantas, ou clique num vaso da sala para trocar.", grupo_ferramentas, escolher_vaso.bind(id))
 	var cuidados := grupo(barra, "CUIDADOS", 2)
 	botao(cuidados, "regador", "Regador", "molha a terra", Color("5fa8d8"), "Plantas só crescem com a terra molhada.", grupo_ferramentas, escolher.bind("regador"))
