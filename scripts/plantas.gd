@@ -85,7 +85,7 @@ static func folha_costela(tam: float) -> ArrayMesh:
 	return st.commit()
 
 
-static func criar_planta(tipo: String) -> Node3D:
+static func criar_planta(tipo: String, cor: Color) -> Node3D:
 	var g := Node3D.new()
 	match tipo:
 		"costela":
@@ -101,39 +101,15 @@ static func criar_planta(tipo: String) -> Node3D:
 				caule.position = Vector3(sin(lean) * altura / 2.0, cos(lean) * altura / 2.0, 0.0)
 				caule.rotation.z = -lean
 				haste.add_child(caule)
-				var fo := malha(folha, Materiais.toon(VERDE if f[3] else VERDE_ESCURO, true))
+				var fo := malha(folha, Materiais.toon(cor if f[3] else cor.darkened(0.35), true))
 				fo.position = Vector3(sin(lean) * altura, cos(lean) * altura, 0.0)
 				fo.rotation.z = f[2]
 				haste.add_child(fo)
 				g.add_child(haste)
 		"violeta":
-			var folha := esfera(0.1, 8, 6)
-			for k in 8:
-				var a := TAU * k / 8.0
-				var f := malha(folha, Materiais.toon(Color("4c9a45") if k % 2 else Color("5aa850")))
-				f.scale = Vector3(1.0, 0.3, 0.7)
-				f.position = Vector3(cos(a) * 0.11, 0.06 + (k % 2) * 0.02, sin(a) * 0.11)
-				f.rotation = Vector3(0.0, -a, 0.35)
-				g.add_child(f)
-			var petala := esfera(0.035, 6, 4)
-			var miolo_mesh := esfera(0.015, 5, 4)
-			for k in 6:
-				var a := TAU * k / 6.0 + 0.3
-				var r := 0.05 if k % 2 else 0.09
-				var flor := Node3D.new()
-				flor.position = Vector3(cos(a) * r, 0.16 + (k % 3) * 0.03, sin(a) * r)
-				for p in 5:
-					var pa := TAU * p / 5.0
-					var pet := malha(petala, Materiais.toon(Color("8a5bd0") if k % 3 else Color("c9a7f2")))
-					pet.position = Vector3(cos(pa) * 0.03, 0.0, sin(pa) * 0.03)
-					pet.scale = Vector3(1.0, 0.5, 1.0)
-					flor.add_child(pet)
-				var miolo := malha(miolo_mesh, Materiais.toon(Color("f6d861")))
-				miolo.position.y = 0.01
-				flor.add_child(miolo)
-				g.add_child(flor)
+			violeta(g, cor)
 		"rosa":
-			var cores_petalas := [Color("9e2c46"), Color("dd4b67"), Color("f7a1b5")]
+			var cores_petalas := [cor.darkened(0.3), cor, cor.lightened(0.4)]
 			for pos: Vector3 in [Vector3(0, 0.62, 0), Vector3(0.12, 0.45, 0.06), Vector3(-0.1, 0.5, -0.05)]:
 				var caule := malha(cilindro(0.012, 0.014, pos.y, 5), Materiais.toon(VERDE_ESCURO))
 				caule.position = pos / 2.0
@@ -153,6 +129,111 @@ static func criar_planta(tipo: String) -> Node3D:
 				folha.rotation.z = 0.5
 				g.add_child(folha)
 	return g
+
+
+## Violeta-africana, como nas fotos de referência: roseta baixa de folhas ovais aveludadas
+## (verde-escuras em cima, vinho embaixo) e um buquê de flores de 5 pétalas em domo no centro.
+static func violeta(g: Node3D, cor: Color) -> void:
+	var folha_cima := esfera(0.5, 10, 4, true)
+	var mat_cima := Materiais.toon(Color("3b5a38"))
+	var mat_cima_clara := Materiais.toon(Color("466b42"))
+	var mat_baixo := Materiais.toon(Color("a8475e"))
+	var mat_talo := Materiais.toon(Color("7c8a4a"))
+	var mat_nervura := Materiais.toon(Color("6e8f4a"))
+	# [giro, comprimento do talo, comprimento da folha, largura, inclinação, ponta caída]
+	var folhas := []
+	for k in 8:
+		folhas.append([TAU * k / 8.0 + (0.12 if k % 2 else 0.0), 0.13 + (k % 3) * 0.01, 0.22, 0.19, 0.22, -0.18])
+	for k in 5:
+		folhas.append([TAU * k / 5.0 + 0.4, 0.05, 0.15, 0.13, 0.8, 0.0])
+	for i in folhas.size():
+		var f: Array = folhas[i]
+		var talo: float = f[1]
+		var comp: float = f[2]
+		var larg: float = f[3]
+		var haste := Node3D.new()
+		haste.position.y = 0.03
+		haste.rotation = Vector3(0.0, f[0], f[4])
+		g.add_child(haste)
+		var peciolo := malha(cilindro(0.008, 0.011, talo, 5), mat_talo)
+		peciolo.rotation.z = -PI / 2.0
+		peciolo.position.x = talo / 2.0
+		haste.add_child(peciolo)
+		# a folha é um ovo achatado: metade de cima verde e metade de baixo vinho
+		var lamina := Node3D.new()
+		lamina.position.x = talo
+		lamina.rotation.z = f[5]
+		haste.add_child(lamina)
+		var cima := malha(folha_cima, mat_cima_clara if i % 3 == 0 else mat_cima)
+		cima.scale = Vector3(comp, 0.05, larg)
+		cima.position.x = comp / 2.0
+		lamina.add_child(cima)
+		var baixo := malha(folha_cima, mat_baixo)
+		baixo.scale = Vector3(comp, 0.03, larg)
+		baixo.rotation.x = PI
+		baixo.position.x = comp / 2.0
+		lamina.add_child(baixo)
+		var nervura := BoxMesh.new()
+		nervura.size = Vector3(comp * 0.8, 0.004, 0.01)
+		var linha := malha(nervura, mat_nervura)
+		linha.position = Vector3(comp * 0.45, 0.024, 0.0)
+		lamina.add_child(linha)
+
+	# buquê de flores em domo, sobre hastes castanho-rosadas que saem do meio das folhas
+	var mat_haste := Materiais.toon(Color("7a4a3a"))
+	var petala := esfera(0.5, 8, 4)
+	var mat_petala := Materiais.toon(cor)
+	var mat_petala_clara := Materiais.toon(cor.lightened(0.15))
+	var mat_miolo := Materiais.toon(Color("e8d93a"))
+	var mat_anel := Materiais.toon(cor.darkened(0.6))
+	var antera := esfera(0.009, 5, 3)
+	var anel := esfera(0.014, 6, 3)
+	# [ângulo, distância do centro, altura]
+	var flores := [[0.0, 0.0, 0.2]]
+	for k in 7:
+		flores.append([TAU * k / 7.0 + 0.2, 0.085 + (k % 2) * 0.02, 0.15 + (k % 3) * 0.012])
+	for f: Array in flores:
+		var a: float = f[0]
+		var r: float = f[1]
+		var pos := Vector3(cos(a) * r, f[2], sin(a) * r)
+		g.add_child(haste_entre(Vector3(0, 0.03, 0), pos, 0.006, mat_haste))
+		var flor := Node3D.new()
+		flor.position = pos
+		flor.rotation = Vector3(0.0, -a, -r * 5.0)
+		g.add_child(flor)
+		# 2 pétalas menores em cima e 3 maiores embaixo
+		for p in 5:
+			var ap := PI / 2.0 + TAU * p / 5.0
+			var tam := 0.8 if p == 0 or p == 4 else 1.0
+			var pet := malha(petala, mat_petala_clara if p % 2 else mat_petala)
+			pet.scale = Vector3(0.042, 0.009, 0.036) * tam
+			pet.position = Vector3(cos(ap), 0.0, sin(ap)) * 0.021 * tam
+			pet.rotation.y = -ap
+			flor.add_child(pet)
+		var centro := malha(anel, mat_anel)
+		centro.scale.y = 0.4
+		centro.position = Vector3(0.006, 0.004, 0.0)
+		flor.add_child(centro)
+		for z in [-0.006, 0.006]:
+			var am := malha(antera, mat_miolo)
+			am.position = Vector3(0.007, 0.01, z)
+			flor.add_child(am)
+	# botõezinhos fechados entre as flores
+	var botao := esfera(0.014, 6, 4)
+	var mat_botao := Materiais.toon(cor.darkened(0.45))
+	for a in [1.0, 3.3, 5.2]:
+		g.add_child(haste_entre(Vector3(0, 0.03, 0), Vector3(cos(a) * 0.05, 0.17, sin(a) * 0.05), 0.005, mat_haste))
+		var b := malha(botao, mat_botao)
+		b.position = Vector3(cos(a) * 0.05, 0.17, sin(a) * 0.05)
+		g.add_child(b)
+
+
+## Cilindro fininho ligando dois pontos (hastes das flores).
+static func haste_entre(de: Vector3, ate: Vector3, raio: float, material: Material) -> MeshInstance3D:
+	var dir := ate - de
+	var m := malha(cilindro(raio, raio, dir.length(), 4), material)
+	m.transform = Transform3D(Basis(Quaternion(Vector3.UP, dir.normalized())), (de + ate) / 2.0)
+	return m
 
 
 static func criar_vaso(tipo: String, cor: Color) -> Node3D:

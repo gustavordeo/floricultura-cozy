@@ -5,9 +5,9 @@ extends Node3D
 const LUZES := {"sol": "Sol direto", "meia": "Meia-luz", "sombra": "Sombra"}
 # luz: quanto cada planta gosta de cada luz (1 = ideal, 0.6 = aceita, 0.3 = sofre); multiplica o ritmo
 const PLANTAS := {
-	"violeta": {"nome": "Violeta", "cor": "8a5bd0", "tempos": [6.0, 8.0], "seca": 25.0, "luz": {"sol": 0.3, "meia": 1.0, "sombra": 0.6}, "dica": "Gosta de meia-luz. Sol direto queima as folhas.", "gosta": "gosta de meia-luz"},
-	"rosa": {"nome": "Rosa", "cor": "dd4b67", "tempos": [7.0, 9.0], "seca": 15.0, "luz": {"sol": 1.0, "meia": 0.6, "sombra": 0.3}, "dica": "Precisa de sol direto e de rega frequente.", "gosta": "gosta de sol"},
-	"costela": {"nome": "Costela de adão", "cor": "4c9a45", "tempos": [8.0, 10.0], "seca": 60.0, "luz": {"sol": 0.6, "meia": 1.0, "sombra": 1.0}, "dica": "Tranquila: aguenta sombra e fica um minuto sem água.", "gosta": "aguenta sombra"},
+	"violeta": {"nome": "Violeta", "cores": ["5a1f9a", "a54fd0", "c9a7f2", "e07bb5", "5b6fd6", "f4f0fb"], "nomes_cores": ["Roxa", "Lilás vivo", "Lavanda", "Rosa", "Azul", "Branca"], "tempos": [6.0, 8.0], "seca": 25.0, "luz": {"sol": 0.3, "meia": 1.0, "sombra": 0.6}, "dica": "Gosta de meia-luz. Sol direto queima as folhas.", "gosta": "gosta de meia-luz"},
+	"rosa": {"nome": "Rosa", "cores": ["dd4b67", "f7a1b5", "f6d861", "f08a4b", "f7f1e8", "9e2c46"], "nomes_cores": ["Vermelha", "Rosa-clara", "Amarela", "Laranja", "Branca", "Vinho"], "tempos": [7.0, 9.0], "seca": 15.0, "luz": {"sol": 1.0, "meia": 0.6, "sombra": 0.3}, "dica": "Precisa de sol direto e de rega frequente.", "gosta": "gosta de sol"},
+	"costela": {"nome": "Costela de adão", "cores": ["4c9a45", "2f6b3a", "7fb24a", "3f8f6e"], "nomes_cores": ["Verde", "Verde-escura", "Verde-limão", "Verde-azulada"], "tempos": [8.0, 10.0], "seca": 60.0, "luz": {"sol": 0.6, "meia": 1.0, "sombra": 1.0}, "dica": "Tranquila: aguenta sombra e fica um minuto sem água.", "gosta": "aguenta sombra"},
 }
 const VASOS := {
 	"barro": {"nome": "Barro", "cor": "c8643c", "charme": 0},
@@ -52,7 +52,7 @@ const TINTA_SUAVE := Color("6b5a49")
 const MADEIRA := Color("7a4a2e")
 const DESTAQUE := Color("dd4b67")
 
-var estado := {"t": 0.0, "pontos": {}}
+var estado := {"t": 0.0, "pontos": {}, "cores": {}}
 var ferramenta := "costela"
 var vaso_escolhido := "barro"
 var confirmacao := {}
@@ -84,12 +84,8 @@ var ponteiro_relogio: MeshInstance3D
 var abajur: OmniLight3D
 var tex_coracao: ImageTexture
 
-var lbl_aconchego: Label
-var lbl_info: Label
-var lbl_status: Label
-var btn_vista: Button
-var btn_girar: Button
-var botoes := {}
+var hud: Hud
+var pos_mouse := Vector2.ZERO
 
 var tempo := 0.0
 var ultimo_save := 0.0
@@ -103,7 +99,6 @@ func _ready() -> void:
 	montar_pos_processo()
 	montar_interface()
 	escolher("costela")
-	status("Escolha uma planta e clique num espaço com + na sala. Arraste para mover o cenário.")
 	get_viewport().size_changed.connect(ajustar_tamanho)
 	ajustar_tamanho()
 	posicionar_camera()
@@ -122,6 +117,8 @@ func carregar() -> void:
 	var dados = JSON.parse_string(FileAccess.get_file_as_string(ARQUIVO_SAVE))
 	if dados is Dictionary and dados.get("pontos") is Dictionary:
 		estado = dados
+		if not estado.get("cores") is Dictionary:
+			estado.cores = {}
 
 
 func salvar() -> void:
@@ -604,6 +601,7 @@ func _unhandled_input(evento: InputEvent) -> void:
 		var e := evento as InputEventMouseMotion
 		if toques.size() >= 2:
 			return
+		pos_mouse = e.position
 		if arrastando < 0:
 			hover = ponto_sob(e.position)
 			Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND if hover >= 0 else Input.CURSOR_ARROW)
@@ -766,10 +764,10 @@ func clicar(i: int) -> void:
 	if p != null:
 		status("Este vaso já tem uma planta.")
 		return
-	estado.pontos[ponto.id] = {"vaso": v.vaso if v != null else vaso_escolhido, "planta": {"tipo": ferramenta, "estagio": 0, "progresso": 0.0, "molhado_ate": 0.0}}
+	estado.pontos[ponto.id] = {"vaso": v.vaso if v != null else vaso_escolhido, "planta": {"tipo": ferramenta, "cor": cor_de(ferramenta), "estagio": 0, "progresso": 0.0, "molhado_ate": 0.0}}
 	var luz: float = def.luz[ponto.luz]
-	var aviso := "Ela adora essa luz!" if luz == 1.0 else ("A luz aqui é razoável para ela." if luz >= 0.6 else "Ela não gosta dessa luz e vai crescer bem devagar.")
-	status("%s colocada: %s. %s Agora regue." % [def.nome, String(ponto.nome).to_lower(), aviso])
+	var aviso := "Adorou a luz daqui!" if luz == 1.0 else ("A luz aqui é razoável." if luz >= 0.6 else "Não gosta dessa luz, vai crescer devagar.")
+	status("%s plantada. %s Agora regue." % [def.nome, aviso])
 	salvar()
 
 
@@ -797,13 +795,13 @@ func sincronizar(i: int, dt: float) -> void:
 		vis.vaso_tipo = vaso_tipo
 
 	var p = v.planta if v != null else null
-	var planta_tipo: String = p.tipo if p != null else ""
+	var planta_tipo: String = (p.tipo + "|" + String(p.get("cor", ""))) if p != null else ""
 	if planta_tipo != vis.planta_tipo:
 		if vis.planta != null:
 			vis.planta.queue_free()
 		vis.planta = null
 		if planta_tipo != "":
-			var planta := Plantas.criar_planta(planta_tipo)
+			var planta := Plantas.criar_planta(p.tipo, Color(p.get("cor", PLANTAS[p.tipo].cores[0])))
 			Materiais.mascarar(planta, true)
 			planta.position.y = 0.28
 			g.add_child(planta)
@@ -864,8 +862,8 @@ func _process(delta: float) -> void:
 	ponteiro_relogio.rotation.z = -tempo * 0.2
 	abajur.light_energy = 0.85 + sin(tempo * 0.7) * 0.05
 	mover_camera(dt)
-	lbl_aconchego.text = "♥ Aconchego %d" % aconchego()
-	lbl_info.text = descrever(hover)
+	hud.atualizar_aconchego(aconchego())
+	hud.mostrar_dica(descrever(hover), pos_mouse)
 	if tempo - ultimo_save > 5.0:
 		salvar()
 		ultimo_save = tempo
@@ -874,13 +872,17 @@ func _process(delta: float) -> void:
 # ---------- Interface ----------
 
 func status(msg: String) -> void:
-	if lbl_status:
-		lbl_status.text = msg
+	if hud:
+		hud.mostrar_aviso(msg)
+
+
+func cor_de(planta: String) -> String:
+	return estado.cores.get(planta, PLANTAS[planta].cores[0])
 
 
 func descrever(i: int) -> String:
 	if i < 0:
-		return "Passe o mouse ou toque num espaço com + para ver a luz de cada canto."
+		return ""
 	var ponto: Dictionary = PONTOS[i]
 	var v = estado.pontos.get(ponto.id)
 	var txt := "%s · %s" % [ponto.nome, LUZES[ponto.luz]]
@@ -892,196 +894,45 @@ func descrever(i: int) -> String:
 	var def: Dictionary = PLANTAS[p.tipo]
 	var luz: float = def.luz[ponto.luz]
 	txt += " · %s, %s" % [def.nome, ESTAGIOS[int(p.estagio)]]
-	txt += ", feliz com a luz" if luz == 1.0 else (", luz razoável" if luz >= 0.6 else ", não gosta dessa luz")
-	if estado.t < p.molhado_ate:
-		txt += ", terra molhada por mais %ds" % ceili(p.molhado_ate - estado.t)
-	else:
+	txt += ", feliz" if luz == 1.0 else ("" if luz >= 0.6 else ", não gosta da luz")
+	if estado.t >= p.molhado_ate:
 		txt += ", com sede"
 	return txt
-
-
-func estilo_caixa(fundo: Color, borda: Color, largura := 3) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = fundo
-	s.border_color = borda
-	s.set_border_width_all(largura)
-	s.shadow_color = borda
-	s.shadow_size = 0
-	s.shadow_offset = Vector2(3, 3)
-	s.set_content_margin_all(8)
-	return s
-
-
-func criar_tema() -> Theme:
-	var t := Theme.new()
-	t.default_font_size = 15
-	t.set_color("font_color", "Label", TINTA)
-	for estado_botao in ["normal", "hover", "pressed", "hover_pressed", "focus", "disabled"]:
-		var cor_borda := DESTAQUE if estado_botao in ["pressed", "hover_pressed"] else MADEIRA
-		var cor_fundo := Color("fbe1e7") if estado_botao in ["pressed", "hover_pressed"] else (Color("fffbe9") if estado_botao == "hover" else PAPEL)
-		var s := estilo_caixa(cor_fundo, cor_borda)
-		if estado_botao == "focus":
-			s.draw_center = false
-		t.set_stylebox(estado_botao, "Button", s)
-	for cor_nome in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color"]:
-		t.set_color(cor_nome, "Button", TINTA)
-	t.set_stylebox("panel", "PanelContainer", estilo_caixa(Color(PAPEL, 0.94), MADEIRA))
-	return t
 
 
 func montar_interface() -> void:
 	var camada := CanvasLayer.new()
 	camada.layer = 1
 	add_child(camada)
-	var raiz := Control.new()
-	raiz.set_anchors_preset(Control.PRESET_FULL_RECT)
-	raiz.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	raiz.theme = criar_tema()
-	camada.add_child(raiz)
-
-	# topo: título, aconchego e opções de câmera
-	var topo := HBoxContainer.new()
-	topo.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	topo.offset_left = 16
-	topo.offset_right = -16
-	topo.offset_top = 12
-	topo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	topo.add_theme_constant_override("separation", 10)
-	raiz.add_child(topo)
-	var titulo := Label.new()
-	titulo.text = "Sala Cozy"
-	titulo.add_theme_font_size_override("font_size", 28)
-	titulo.add_theme_color_override("font_color", MADEIRA)
-	titulo.add_theme_color_override("font_shadow_color", PAPEL)
-	titulo.add_theme_constant_override("shadow_offset_x", 2)
-	titulo.add_theme_constant_override("shadow_offset_y", 2)
-	topo.add_child(titulo)
-	var painel_aconchego := PanelContainer.new()
-	painel_aconchego.tooltip_text = "Aconchego: plantas adultas felizes com a luz, e vasos bonitos"
-	topo.add_child(painel_aconchego)
-	lbl_aconchego = Label.new()
-	lbl_aconchego.add_theme_font_size_override("font_size", 18)
-	painel_aconchego.add_child(lbl_aconchego)
-	var espaco := Control.new()
-	espaco.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	espaco.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	topo.add_child(espaco)
-	btn_vista = Button.new()
-	btn_vista.text = "Câmera do alto"
-	btn_vista.toggle_mode = true
-	btn_vista.toggled.connect(func(_ligado: bool) -> void: trocar_vista())
-	topo.add_child(btn_vista)
-	btn_girar = Button.new()
-	btn_girar.text = "Girar a sala"
-	btn_girar.toggle_mode = true
-	btn_girar.toggled.connect(func(ligado: bool) -> void: girando = ligado)
-	topo.add_child(btn_girar)
-	var btn_recomecar := Button.new()
-	btn_recomecar.text = "Recomeçar"
-	btn_recomecar.pressed.connect(recomecar)
-	topo.add_child(btn_recomecar)
-
-	# baixo: informação do ponto, barra de plantas/vasos/cuidados e mensagem
-	var baixo := VBoxContainer.new()
-	baixo.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	baixo.offset_left = 16
-	baixo.offset_right = -16
-	baixo.offset_bottom = -12
-	baixo.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	baixo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	raiz.add_child(baixo)
-	lbl_info = Label.new()
-	lbl_info.add_theme_color_override("font_color", TINTA_SUAVE)
-	lbl_info.add_theme_color_override("font_outline_color", PAPEL)
-	lbl_info.add_theme_constant_override("outline_size", 6)
-	baixo.add_child(lbl_info)
-	var barra := HBoxContainer.new()
-	barra.add_theme_constant_override("separation", 18)
-	barra.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	baixo.add_child(barra)
-	var grupo_ferramentas := ButtonGroup.new()
-
-	var plantas := grupo(barra, "PLANTAS", 3)
-	for id in PLANTAS:
-		var def: Dictionary = PLANTAS[id]
-		botao(plantas, id, def.nome, def.gosta, Color(def.cor), def.dica, grupo_ferramentas, escolher.bind(id))
-	var vasos := grupo(barra, "VASOS", 3)
-	for id in VASOS:
-		var def: Dictionary = VASOS[id]
-		var detalhe: String = ("+%d aconchego" % def.charme) if def.charme > 0 else "simples"
-		botao(vasos, "vaso-" + id, def.nome, detalhe, Color(def.cor), "Usa este vaso nas próximas plantas, ou clique num vaso da sala para trocar.", grupo_ferramentas, escolher_vaso.bind(id))
-	var cuidados := grupo(barra, "CUIDADOS", 2)
-	botao(cuidados, "regador", "Regador", "molha a terra", Color("5fa8d8"), "Plantas só crescem com a terra molhada.", grupo_ferramentas, escolher.bind("regador"))
-	botao(cuidados, "tirar", "Tirar", "libera o espaço", Color("a8703f"), "Remove o vaso e a planta. Pede confirmação.", grupo_ferramentas, escolher.bind("tirar"))
-
-	var painel_status := PanelContainer.new()
-	baixo.add_child(painel_status)
-	lbl_status = Label.new()
-	lbl_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	painel_status.add_child(lbl_status)
-
-
-func grupo(pai: Control, titulo: String, peso: int) -> HBoxContainer:
-	var caixa_grupo := VBoxContainer.new()
-	caixa_grupo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	caixa_grupo.size_flags_stretch_ratio = peso
-	caixa_grupo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pai.add_child(caixa_grupo)
-	var rotulo := Label.new()
-	rotulo.text = titulo
-	rotulo.add_theme_font_size_override("font_size", 12)
-	rotulo.add_theme_color_override("font_color", TINTA_SUAVE)
-	rotulo.add_theme_color_override("font_outline_color", PAPEL)
-	rotulo.add_theme_constant_override("outline_size", 6)
-	caixa_grupo.add_child(rotulo)
-	var linha := HBoxContainer.new()
-	linha.add_theme_constant_override("separation", 8)
-	linha.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	caixa_grupo.add_child(linha)
-	return linha
-
-
-func botao(pai: Control, id: String, rotulo: String, detalhe: String, cor: Color, dica: String, grupo_botoes: ButtonGroup, acao: Callable) -> void:
-	var b := Button.new()
-	b.toggle_mode = true
-	b.button_group = grupo_botoes
-	b.tooltip_text = dica
-	b.text = "%s\n%s" % [rotulo, detalhe]
-	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b.clip_text = true
-	b.focus_mode = Control.FOCUS_NONE
-	# amostra da cor, como nos botões do protótipo
-	var img := Image.create_empty(18, 18, false, Image.FORMAT_RGBA8)
-	img.fill(TINTA)
-	img.fill_rect(Rect2i(2, 2, 14, 14), cor)
-	b.icon = ImageTexture.create_from_image(img)
-	b.pressed.connect(acao)
-	pai.add_child(b)
-	botoes[id] = b
-
-
-func marcar() -> void:
-	var id := "vaso-" + vaso_escolhido if ferramenta == "vaso" else ferramenta
-	if botoes.has(id):
-		(botoes[id] as Button).set_pressed_no_signal(true)
+	hud = Hud.new()
+	camada.add_child(hud)
+	hud.montar(PLANTAS, VASOS, estado.cores, vaso_escolhido)
+	hud.ferramenta_escolhida.connect(escolher)
+	hud.cor_escolhida.connect(func(planta: String, cor: String) -> void: estado.cores[planta] = cor)
+	hud.vaso_escolhido.connect(escolher_vaso)
+	hud.vista_trocada.connect(trocar_vista)
+	hud.giro_alternado.connect(func(ligado: bool) -> void: girando = ligado)
+	hud.recomecar_pedido.connect(recomecar)
 
 
 func escolher(id: String) -> void:
 	ferramenta = id
-	marcar()
+	hud.marcar(id)
 	if PLANTAS.has(id):
-		status("%s: %s Clique num espaço com + na sala." % [PLANTAS[id].nome, PLANTAS[id].dica])
+		status("%s: %s" % [PLANTAS[id].nome, PLANTAS[id].gosta])
 	elif id == "regador":
-		status("Regador na mão. Clique nas plantas com a gotinha de sede.")
-	else:
-		status("Clique num vaso da sala para tirá-lo.")
+		status("Regue as plantas com a gotinha de sede.")
+	elif id == "tirar":
+		status("Toque num vaso para tirá-lo.")
+	elif id == "vaso":
+		status("Escolha o vaso nas bolinhas e toque num +.")
 
 
 func escolher_vaso(id: String) -> void:
 	vaso_escolhido = id
 	ferramenta = "vaso"
-	marcar()
-	status("Vaso de %s escolhido. Clique num espaço livre para colocar, ou num vaso da sala para trocar." % String(VASOS[id].nome).to_lower())
+	hud.marcar("vaso")
+	status("Vaso de %s. Toque num + ou num vaso da sala." % String(VASOS[id].nome).to_lower())
 
 
 func trocar_vista() -> void:
@@ -1094,12 +945,12 @@ func trocar_vista() -> void:
 
 
 func alternar_giro() -> void:
-	btn_girar.button_pressed = not btn_girar.button_pressed
+	hud.desligar_giro()
 
 
 func recomecar() -> void:
-	if not confirmar(-2, "recomecar", "Clique de novo em \"Recomeçar\" para esvaziar a sala."):
+	if not confirmar(-2, "recomecar", "Toque de novo em Recomeçar para esvaziar a sala."):
 		return
-	estado = {"t": 0.0, "pontos": {}}
+	estado = {"t": 0.0, "pontos": {}, "cores": estado.cores}
 	salvar()
 	status("Sala vazia de novo.")
